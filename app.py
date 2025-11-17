@@ -5,7 +5,10 @@ import matplotlib as plt
 import plotly.express as px
 
 # INSTALL "requirements.txt" FIRST
+# pip install -r requirements.txt
+
 # TEST APP
+# use "streamlit run app.py" in terminal to run
 
 st.title('Measles Cases')
 
