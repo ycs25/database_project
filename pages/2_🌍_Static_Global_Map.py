@@ -102,7 +102,7 @@ if submitted:
     filtered_data['visible_size'] = filtered_data[target_column] + offset
 
     # set scope and projection to lower cases
-    scope_param = selected_scope.lower().replace(" ", "")
+    scope_param = selected_scope.lower()
     proj_param = selected_proj.lower()
 
     # map
