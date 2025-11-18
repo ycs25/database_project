@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Mapping Demo", page_icon="🌍")
+st.set_page_config(page_title="Global Measles Map", page_icon="🌍")
 
 st.sidebar.header("Global Spread Animation")
 
