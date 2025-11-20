@@ -12,6 +12,8 @@ st.sidebar.header("Time Series Plots")
 
 st.title('Time Series Plots')
 
+# -----------------------------------------------------------------------------
+# Load Data
 DATA_PATH = ('cases_month.csv')
 
 # cached data load
@@ -37,38 +39,113 @@ region_mapping = {
     "WPR": "West Pacific Region"
 }
 data["region_name"] = data["region"].map(region_mapping)
+all_regions = list(region_mapping.values())
+
+# -----------------------------------------------------------------------------
+# Initialize Session States
+if 'active_regions' not in st.session_state:
+    # all by default
+    st.session_state.active_regions = all_regions
+if 'active_case_column' not in st.session_state:
+    # first one by default
+    st.session_state.active_case_column = "measles_total"
+if 'active_display_name' not in st.session_state:
+    st.session_state.active_display_name = "Measles Total"
+
+#------------------------------------------------------------------------------
+# Add case names and mapping
+RAW_CASE_COLUMNS = [
+    "measles_total", 
+    "measles_suspect", 
+    "measles_clinical", 
+    "measles_epi_linked", 
+    "measles_lab_confirmed"
+]
+CASE_NAME_MAPPING = {
+    "measles_total": "Measles Total",
+    "measles_suspect": "Measles Suspect", 
+    "measles_clinical": "Measles Clinical", 
+    "measles_epi_linked": "Measles Epi-Linked", 
+    "measles_lab_confirmed": "Measles Lab Confirmed"
+}
+REVERSE_MAPPING = {v: k for k, v in CASE_NAME_MAPPING.items()}
+DISPLAY_CASE_OPTIONS = list(CASE_NAME_MAPPING.values())
+
+#------------------------------------------------------------------------------
+# Sidebar user input
+with st.sidebar.form(key='plot_settings_form'):
+    st.header("Plot Configuration")
+    
+    # multiselect
+    selected_regions_input = st.multiselect(
+        label="Select Regions",
+        options=all_regions,
+        default=st.session_state.active_regions,
+        help="Choose one or more regions to display."
+    )
+    
+    # selection of case type
+    selected_display_name_input = st.radio(
+        label="Select Case Category",
+        options=DISPLAY_CASE_OPTIONS,
+        index=DISPLAY_CASE_OPTIONS.index(st.session_state.active_display_name),
+        help="Select the type of measles cases to visualize."
+    )
+    
+    submit_button = st.form_submit_button(label='Update Plot')
+
+# Update Session State
+if submit_button:
+    target_column_input = REVERSE_MAPPING.get(selected_display_name_input)
+
+    if not selected_regions_input:
+        st.warning("⚠️ Please select at least one region.")
+    else:
+        st.session_state.active_regions = selected_regions_input
+        st.session_state.active_case_column = target_column_input
+        st.session_state.active_display_name = selected_display_name_input
+        st.rerun()
 
 
+current_regions = st.session_state.active_regions
+current_column = st.session_state.active_case_column
+current_title = st.session_state.active_display_name
 
+# -----------------------------------------------------------------------------
+# Time Series Plot
+if current_regions and current_column:
 
-# Selected by user
-target_column = "measles_total" 
-# "measles_suspect", "measles_clinical"， "measles_epi_linked", "measles_lab_confirmed"
+    filtered_data = data[data["region_name"].isin(current_regions)]
 
-filtered = data[["date", "region_name", target_column]]
+    df_indexed_summed = filtered_data.groupby(['date', 'region_name'])[current_column].sum().sort_index()
 
-df_indexed_summed = filtered.groupby(['date', 'region_name']).sum().sort_index()
+    df_plot = df_indexed_summed.unstack(level='region_name')
 
-df_plot = df_indexed_summed[target_column].unstack(level='region_name')
+    df_plot.index = pd.to_datetime(df_plot.index)
 
-fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(10, 6))
 
-df_plot.plot(
-    ax=ax,
-    title=f'{target_column} Over Time by Region',
-    x_compat=True 
-)
+    if not df_plot.empty:
+        df_plot.plot(
+            ax=ax,
+            title=f'{current_title} Over Time by Region',
+            x_compat=True 
+        )
 
-locator = mdates.YearLocator()
-ax.xaxis.set_major_locator(locator)
-formatter = mdates.DateFormatter('%Y')
-ax.xaxis.set_major_formatter(formatter)
+        locator = mdates.YearLocator()
+        ax.xaxis.set_major_locator(locator)
+        formatter = mdates.DateFormatter('%Y')
+        ax.xaxis.set_major_formatter(formatter)
 
-fig.autofmt_xdate()
+        fig.autofmt_xdate()
 
-ax.set_ylabel('Cases Count')
-ax.legend(title='Region')
-fig.tight_layout()
+        ax.set_ylabel('Cases Count')
+        ax.legend(title='Region')
+        fig.tight_layout()
 
-st.subheader(f"📈 {target_column} Time Series Plot")
-st.pyplot(fig)
+        st.subheader(f"📈 {current_title} Time Series Plot")
+        st.pyplot(fig)
+
+    else:
+        st.info("No data available for the selected criteria.")
+
