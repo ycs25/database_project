@@ -22,6 +22,11 @@ data = df.copy() # Deep Copy
 
 st.sidebar.success("✅ Data Loaded.")
 st.sidebar.header("Static Global Map")
+st.sidebar.markdown(
+    """
+    Choose **year/month, region, projection method** and **case type** to draw a map.
+    """
+)
 
 # plot configure
 offset = 20

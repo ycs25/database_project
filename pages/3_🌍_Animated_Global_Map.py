@@ -22,6 +22,11 @@ data = df.copy() # Deep copy
 
 st.sidebar.success("✅ Data Loaded.")
 st.sidebar.header("Global Spread Animation")
+st.sidebar.markdown(
+    """
+    Choose **duration, region, projection method** and **case type** to create the animation.
+    """
+)
 
 data['period'] = data['year'].astype(str) + "-" + data['month'].astype(str).str.zfill(2)
 

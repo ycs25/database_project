@@ -25,6 +25,12 @@ data = df.copy() # Deep Copy
 
 st.sidebar.success("✅ Data Loaded.")
 st.sidebar.header("Burdens on Healthcare")
+st.sidebar.markdown(
+    """
+    We check the **Median Incidence Rate Per 1 Million Population** and 
+    the **Laboratory Confirmed Case Ratio**.
+    """
+)
 
 # Add region_name column
 region_mapping = {
@@ -86,3 +92,50 @@ fig.update_layout(
 )
 
 st.plotly_chart(fig)
+
+#------------------------------------------------------------------------------
+# Bottom 20 Countries By Laboratory Confirmed Case Ratio
+
+df_ratio = data[data['measles_total'] > 0].copy()
+
+df_ratio['lab_confirmed_ratio'] = df_ratio['measles_lab_confirmed'] / df_ratio['measles_total']
+
+bottom20 = df_ratio.groupby("country")['lab_confirmed_ratio'].median().sort_values(ascending=True).head(20).index
+
+df_ratio_plot = df_ratio[df_ratio["country"].isin(bottom20)].copy()
+
+fig2 = px.box(
+    df_ratio_plot, 
+    x="lab_confirmed_ratio", 
+    y="country",
+    title="<b>Bottom 20 Countries by Laboratory Confirmed Case Ratio</b><br><sup>Hover over points to check outliers</sup>",
+    
+    category_orders={"country": bottom20}, 
+    
+    hover_name="country",
+    custom_data = ["year", "measles_total", "total_population", "lab_confirmed_ratio"],
+    
+    points="all",
+    orientation="h",
+    height=800
+)
+
+template2 = (
+    '<b>%{hovertext}</b><br>' + 
+    '<br>' +
+    'Year: %{customdata[0]}<br>' +
+    f'Total Cases: %{{customdata[1]:,}}<extra></extra><br>' +
+    f'Total Population: %{{customdata[2]:,}}<br>' +
+    f'Laboratory Confirmed Case Ratio: %{{customdata[3]:.2f}}<br>'
+)
+
+fig2.update_traces(hovertemplate=template2)
+
+fig2.update_layout(
+    xaxis_title="Laboratory Confirmed Case Ratio",
+    yaxis_title="",
+    template="plotly_white",
+    hovermode="closest"
+)
+
+st.plotly_chart(fig2)
