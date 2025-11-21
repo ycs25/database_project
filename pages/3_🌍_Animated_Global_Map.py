@@ -5,23 +5,25 @@ import plotly.express as px
 
 st.set_page_config(page_title="Global Measles Map", page_icon="🌍")
 
-st.sidebar.header("Global Spread Animation")
-
 st.title('Animated Global Map')
 
 DATA_PATH = ('cases_month.csv')
 
 # cached data load
 @st.cache_data
-def load_data():
-    data = pd.read_csv(DATA_PATH)
-    data['period'] = data['year'].astype(str) + "-" + data['month'].astype(str).str.zfill(2)
-    return data
+def load_data(path):
+    df = pd.read_csv(path)
+    return df
 
 with st.spinner('Loading data...'):
-    data = load_data()
+    df = load_data(DATA_PATH)
+
+data = df.copy() # Deep copy
 
 st.sidebar.success("✅ Data Loaded.")
+st.sidebar.header("Global Spread Animation")
+
+data['period'] = data['year'].astype(str) + "-" + data['month'].astype(str).str.zfill(2)
 
 # plot configure
 offset = 20

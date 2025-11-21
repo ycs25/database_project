@@ -8,8 +8,6 @@ from statsmodels.tsa.seasonal import seasonal_decompose
 
 st.set_page_config(page_title="Time Series", page_icon="📈")
 
-st.sidebar.header("Time Series Plots")
-
 st.title('Time Series Plots')
 
 # -----------------------------------------------------------------------------
@@ -18,14 +16,17 @@ DATA_PATH = ('cases_month.csv')
 
 # cached data load
 @st.cache_data
-def load_data():
-    data = pd.read_csv(DATA_PATH)
-    return data
+def load_data(path):
+    df = pd.read_csv(path)
+    return df
 
 with st.spinner('Loading data...'):
-    data = load_data()
+    df = load_data(DATA_PATH)
+
+data = df.copy()
 
 st.sidebar.success("✅ Data Loaded.")
+st.sidebar.header("Time Series Plots")
 
 # Add date column
 data["date"] = pd.to_datetime(data[["year", "month"]].assign(DAY=1))
@@ -186,7 +187,7 @@ st.markdown(
 """
 )
 
-# Independent Block with user control
+# Independent Block with user control version
 # st.subheader("Seasonal Decomposition of Measles Cases")
 
 # if 'sd_selected_regions' not in st.session_state:
