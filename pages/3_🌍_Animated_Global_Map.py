@@ -2,23 +2,24 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.express as px
+from database_retrieve import get_monthly_cases
 
 st.set_page_config(page_title="Global Measles Map", page_icon="🌍")
 
 st.title('Animated Global Map')
 
-DATA_PATH = ('cases_month.csv')
-
 # cached data load
 @st.cache_data
-def load_data(path):
-    df = pd.read_csv(path)
+def load_data():
+    df = get_monthly_cases()
     return df
 
 with st.spinner('Loading data...'):
-    df = load_data(DATA_PATH)
+    df = load_data()
 
-data = df.copy() # Deep copy
+data = df.copy() # Deep Copy
+
+data['date'] = pd.to_datetime(data['date'])
 
 st.sidebar.success("✅ Data Loaded.")
 st.sidebar.header("Global Spread Animation")
@@ -27,8 +28,6 @@ st.sidebar.markdown(
     Choose **duration, region, projection method** and **case type** to create the animation.
     """
 )
-
-data['period'] = data['year'].astype(str) + "-" + data['month'].astype(str).str.zfill(2)
 
 # plot configure
 offset = 20
@@ -58,8 +57,8 @@ with st.form("query_form"):
 
     st.markdown("---")
 
-    min_year = int(data['year'].min())
-    max_year = int(data['year'].max())
+    min_year = int(data['date'].min().year)
+    max_year = int(data['date'].max().year)
 
     selected_years = st.slider(
         "Select Animation Year Range", 
@@ -83,15 +82,15 @@ if submitted:
     start_year, end_year = selected_years
 
     # subsetting data
-    CONDITIONS = (data["year"] >= start_year) & \
-                (data["year"] <= end_year) & \
+    CONDITIONS = (data["date"] >= pd.to_datetime(f"{start_year}-01-01")) & \
+                (data["date"] <= pd.to_datetime(f"{end_year}-12-31")) & \
                 (data[target_column].notna())
     
-    COLUMNS = ["country", "iso3", "period", target_column]
+    COLUMNS = ["country", "iso3", "date", target_column]
 
     filtered_data = data.loc[CONDITIONS, COLUMNS].copy()
 
-    filtered_data = filtered_data.sort_values("period")
+    filtered_data = filtered_data.sort_values("date")
 
     # upper bound for levels
     current_max = filtered_data[target_column].max()
@@ -127,7 +126,7 @@ if submitted:
         locationmode = "ISO-3",
 
         # animation configure
-        animation_frame = "period", # play by time
+        animation_frame = "date", # play by time
         animation_group = "iso3", # transit by country
 
         size = "visible_size",
@@ -143,7 +142,7 @@ if submitted:
             "category": "Level",
             target_column: display_name,
             "iso3": "ISO-3",
-            "period": "Time"
+            "date": "Time"
             },
         hover_name = "country",
 

@@ -6,30 +6,30 @@ import matplotlib.dates as mdates
 from statsmodels.tsa.seasonal import seasonal_decompose
 # from statsmodels.graphics.tsaplots import plot_acf
 
+from database_retrieve import get_monthly_cases
+
 st.set_page_config(page_title="Time Series", page_icon="📈")
 
 st.title('Time Series Plots')
 
 # -----------------------------------------------------------------------------
 # Load Data
-DATA_PATH = ('cases_month.csv')
 
 # cached data load
 @st.cache_data
-def load_data(path):
-    df = pd.read_csv(path)
+def load_data():
+    df = get_monthly_cases()
     return df
 
 with st.spinner('Loading data...'):
-    df = load_data(DATA_PATH)
+    df = load_data()
 
 data = df.copy()
+data['date'] = pd.to_datetime(data['date'])
 
 st.sidebar.success("✅ Data Loaded.")
 st.sidebar.header("Time Series Plots")
 
-# Add date column
-data["date"] = pd.to_datetime(data[["year", "month"]].assign(DAY=1))
 # Add region_name column
 region_mapping = {
     "AFR": "African Region",

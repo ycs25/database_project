@@ -2,23 +2,24 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.express as px
+from database_retrieve import get_monthly_cases
 
 st.set_page_config(page_title="Global Measles Map", page_icon="🌍")
 
 st.title('Global Measles Map')
 
-DATA_PATH = ('cases_month.csv')
-
 # cached data load
 @st.cache_data
-def load_data(path):
-    df = pd.read_csv(path)
+def load_data():
+    df = get_monthly_cases()
     return df
 
 with st.spinner('Loading data...'):
-    df = load_data(DATA_PATH)
+    df = load_data()
 
 data = df.copy() # Deep Copy
+
+data['date'] = pd.to_datetime(data['date'])
 
 st.sidebar.success("✅ Data Loaded.")
 st.sidebar.header("Static Global Map")
@@ -75,8 +76,8 @@ if submitted:
         display_name = "Rubella Cases"
 
     # subsetting data
-    CONDITIONS = (data["year"] == selected_year) & \
-                (data["month"] == selected_month) & \
+    target_date_str = f"{selected_year}-{int(selected_month):02d}-01"
+    CONDITIONS = (data['date'] == pd.to_datetime(target_date_str)) & \
                 (data[target_column].notna())
     
     COLUMNS = ["country", "iso3", target_column]
